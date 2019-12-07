@@ -46,6 +46,7 @@ public class Hook implements IXposedHookLoadPackage {
                     log(getRequestName(value[0]) + " " + getFileHandleName(value[2]));
                     if (buffer != null) {
                         log("file:\n" + buffer);
+                        log("file raw:\n" + bytesToHex(buffer.getBytes()));
                         buffer = null;
                     }
                 } else if (characteristic.getUuid().toString().equals("3dda0004-957f-7d4a-34a6-74696673696d")) {
@@ -77,7 +78,7 @@ public class Hook implements IXposedHookLoadPackage {
 
                 log("fileName: " + fileName);
 
-                if(fileName.equals("main_bg")){
+                if (fileName.equals("main_bg")) {
                     log("reading file...");
                     FileInputStream fis = new FileInputStream("/sdcard/traditional_bg.bin");
                     byte[] bytes = new byte[fis.available()];
@@ -88,8 +89,8 @@ public class Hook implements IXposedHookLoadPackage {
 
                     log("original length: " + originalBytes.length + "   new: " + bytes.length);
 
-                    for(int i = 0; i < originalBytes.length; i++){
-                        if(originalBytes[i] != bytes[i]){
+                    for (int i = 0; i < originalBytes.length; i++) {
+                        if (originalBytes[i] != bytes[i]) {
                             log("uhhh error");
                             break;
                         }
@@ -99,6 +100,16 @@ public class Hook implements IXposedHookLoadPackage {
 
                     log("file read.");
                 }
+            }
+        });
+
+        findAndHookConstructor("com.fossil.blesdk.model.file.NotificationIcon", lpparam.classLoader, String.class, byte[].class, new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                super.beforeHookedMethod(param);
+
+                log("NotificationIcon: " + param.args[0]);
+                log(bytesToHex((byte[]) param.args[1]));
             }
         });
 
@@ -121,9 +132,9 @@ public class Hook implements IXposedHookLoadPackage {
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 super.afterHookedMethod(param);
 
-                log("calculate() input: " + bytesToHex((byte[])param.args[0]));
+                log("calculate() input: " + bytesToHex((byte[]) param.args[0]));
 
-                log("result: " + bytesToHex((byte[])param.getResult()));
+                log("result: " + bytesToHex((byte[]) param.getResult()));
             }
         });
 
@@ -166,13 +177,30 @@ public class Hook implements IXposedHookLoadPackage {
                 byte[].class,
                 byte[].class,
                 byte[].class,
-                new XC_MethodHook(){
+                new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         super.afterHookedMethod(param);
 
-                        log(param.args[0] + "  " + bytesToHex((byte[]) param.args[1]) + "  " + bytesToHex((byte[]) param.args[2]) + "  " + bytesToHex((byte[]) param.args[3]));
+                        log(param.args[0] + "  " + param.args[1] + "  " + bytesToHex((byte[]) param.args[2]) + "  " + bytesToHex((byte[]) param.args[3]) + "  " + bytesToHex((byte[]) param.args[4]));
                         log("result: " + bytesToHex((byte[]) param.getResult()));
+                    }
+                }
+        );
+
+        findAndHookConstructor(
+                "com.fossil.blesdk.device.logic.phase.Phase",
+                lpparam.classLoader,
+                "com.fossil.blesdk.device.core.Peripheral",
+                "com.fossil.blesdk.device.logic.phase.Phase.a",
+                "com.fossil.blesdk.device.logic.phase.PhaseId",
+                "java.lang.String",
+                new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        super.beforeHookedMethod(param);
+
+                        log("new Phase: " + param.args[2]);
                     }
                 }
         );
