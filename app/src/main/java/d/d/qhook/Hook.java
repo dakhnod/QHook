@@ -5,13 +5,16 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Build;
 import android.util.Log;
 
+import com.fossil.blesdk.device.data.config.DeviceConfigKey;
 import com.fossil.blesdk.device.data.notification.NotificationFilter;
 import com.fossil.blesdk.device.data.notification.NotificationHandMovingConfig;
 import com.fossil.blesdk.device.data.notification.NotificationVibePattern;
 
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
@@ -26,7 +29,7 @@ import static de.robv.android.xposed.XposedHelpers.findAndHookConstructor;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 
 public class Hook implements IXposedHookLoadPackage {
-    String buffer = null;
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
@@ -44,21 +47,21 @@ public class Hook implements IXposedHookLoadPackage {
                 byte[] value = characteristic.getValue();
                 if (characteristic.getUuid().toString().equals("3dda0003-957f-7d4a-34a6-74696673696d")) {
                     log(getRequestName(value[0]) + " " + getFileHandleName(value[2]));
-                    if (buffer != null) {
-                        log("file:\n" + buffer);
-                        log("file raw:\n" + bytesToHex(buffer.getBytes()));
-                        buffer = null;
+
+                    if (bos.size() > 0) {
+                        log("file:\n" + new String(bos.toByteArray()));
+                        log("file raw:\n" + bytesToHex(bos.toByteArray()));
+                        bos.reset();
                     }
                 } else if (characteristic.getUuid().toString().equals("3dda0004-957f-7d4a-34a6-74696673696d")) {
-                    if (buffer == null) buffer = new String(value, 1, value.length - 1);
-                    else buffer += new String(value, 1, value.length - 1);
+                    bos.write(value, 1, value.length - 1);
                 }
 
                 log("write " + characteristic.getUuid().toString() + ": " + bytesToHex(characteristic.getValue()));
             }
         });
 
-        findAndHookMethod("com.fossil.blesdk.device.core.Peripheral$bluetoothGattCallback$1", lpparam.classLoader, "onCharacteristicChanged", BluetoothGatt.class, BluetoothGattCharacteristic.class, new XC_MethodHook() {
+        findAndHookMethod("com.fossil.blesdk.obfuscated.ak$j", lpparam.classLoader, "onCharacteristicChanged", BluetoothGatt.class, BluetoothGattCharacteristic.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
@@ -103,17 +106,16 @@ public class Hook implements IXposedHookLoadPackage {
             }
         });
 
-        findAndHookConstructor("com.fossil.blesdk.model.file.NotificationIcon", lpparam.classLoader, String.class, byte[].class, new XC_MethodHook() {
+        findAndHookConstructor("com.fossil.blesdk.device.data.config.BatteryConfig", lpparam.classLoader, short.class, byte.class, new XC_MethodHook() {
             @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
 
-                log("NotificationIcon: " + param.args[0]);
-                log(bytesToHex((byte[]) param.args[1]));
+                log("battery voltage: " + param.args[0]);
             }
         });
 
-        findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "publicKey", new XC_MethodHook() {
+        /*findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "publicKey", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
@@ -125,9 +127,9 @@ public class Hook implements IXposedHookLoadPackage {
 
                 log("private key: " + bytesToHex(privateKey));
             }
-        });
+        });*/
 
-        findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "calculateSecretKey", byte[].class, new XC_MethodHook() {
+        /*findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "calculateSecretKey", byte[].class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 super.afterHookedMethod(param);
@@ -136,44 +138,44 @@ public class Hook implements IXposedHookLoadPackage {
 
                 log("result: " + bytesToHex((byte[]) param.getResult()));
             }
-        });
+        });*/
 
-        findAndHookMethod("com.fossil.blesdk.obfuscated.u90", lpparam.classLoader, "a", int.class, String.class, String.class, new XC_MethodHook() {
+        /*findAndHookMethod("com.fossil.blesdk.obfuscated.u90", lpparam.classLoader, "a", int.class, String.class, String.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
                 log(param.args[1] + ": " + param.args[2]);
             }
-        });
+        });*/
 
-        findAndHookMethod("com.fossil.blesdk.device.DeviceImplementation", lpparam.classLoader, "d", byte[].class, new XC_MethodHook() {
+        /*findAndHookMethod("com.fossil.blesdk.device.DeviceImplementation", lpparam.classLoader, "d", byte[].class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
                 new Exception().printStackTrace();
             }
-        });
+        });*/
 
-        final XC_MethodHook loggerHook = new XC_MethodHook() {
+        /*final XC_MethodHook loggerHook = new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.beforeHookedMethod(param);
 
                 log(param.args[0] + ": " + param.args[1]);
             }
-        };
+        };*/
 
-        for (String method : new String[]{"v", "d", "e", "i"})
+        /*for (String method : new String[]{"v", "d", "e", "i"})
             findAndHookMethod("com.misfit.frameworks.buttonservice.log.LocalFLogger", lpparam.classLoader, method, String.class, String.class, loggerHook);
-
+*/
         // 24BA5437
 
         findAndHookMethod(
-                "com.fossil.blesdk.utils.EncryptionAES128",
+                "com.fossil.blesdk.obfuscated.om",
                 lpparam.classLoader,
                 "a",
-                "com.fossil.blesdk.utils.EncryptionAES128.Operation",
-                "com.fossil.blesdk.utils.EncryptionAES128.Transformation",
+                "com.fossil.blesdk.obfuscated.om.a",
+                "com.fossil.blesdk.obfuscated.om.b",
                 byte[].class,
                 byte[].class,
                 byte[].class,
@@ -182,13 +184,32 @@ public class Hook implements IXposedHookLoadPackage {
                     protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                         super.afterHookedMethod(param);
 
+                        if("CBC_PKCS5_PADDING".equals(param.args[1].toString())) return;
+
                         log(param.args[0] + "  " + param.args[1] + "  " + bytesToHex((byte[]) param.args[2]) + "  " + bytesToHex((byte[]) param.args[3]) + "  " + bytesToHex((byte[]) param.args[4]));
                         log("result: " + bytesToHex((byte[]) param.getResult()));
+
+                        new Exception().printStackTrace();
                     }
                 }
         );
 
-        findAndHookConstructor(
+
+        /*findAndHookMethod("com.fossil.blesdk.obfuscated.f90", lpparam.classLoader, "a", new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                super.afterHookedMethod(param);
+
+                Field bField = param.thisObject.getClass().getDeclaredField("b");
+                Field cField = param.thisObject.getClass().getDeclaredField("c");
+                Field dField = param.thisObject.getClass().getDeclaredField("d");
+                Field eField = param.thisObject.getClass().getDeclaredField("e");
+
+                log("after\nb: " + bytesToHex((byte[]) bField.get(param.thisObject)) + "\nc: " + bytesToHex((byte[]) cField.get(param.thisObject)) + "\nd: " + dField.get(param.thisObject) + "\ne: " + eField.get(param.thisObject) + "\nresult: " + bytesToHex((byte[]) param.getResult()));
+            }
+        });*/
+
+        /*findAndHookConstructor(
                 "com.fossil.blesdk.device.logic.phase.Phase",
                 lpparam.classLoader,
                 "com.fossil.blesdk.device.core.Peripheral",
@@ -203,7 +224,7 @@ public class Hook implements IXposedHookLoadPackage {
                         log("new Phase: " + param.args[2]);
                     }
                 }
-        );
+        );*/
 
         log("hooked fossil");
     }
