@@ -72,7 +72,7 @@ public class Hook implements IXposedHookLoadPackage {
             }
         });
 
-        findAndHookConstructor("com.fossil.blesdk.model.file.AssetFile", lpparam.classLoader, String.class, byte[].class, new XC_MethodHook() {
+        /*findAndHookConstructor("com.fossil.blesdk.model.file.AssetFile", lpparam.classLoader, String.class, byte[].class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 super.afterHookedMethod(param);
@@ -103,40 +103,6 @@ public class Hook implements IXposedHookLoadPackage {
 
                     log("file read.");
                 }
-            }
-        });
-
-        findAndHookConstructor("com.fossil.blesdk.device.data.config.BatteryConfig", lpparam.classLoader, short.class, byte.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-
-                log("battery voltage: " + param.args[0]);
-            }
-        });
-
-        /*findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "publicKey", new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                log("public key: " + bytesToHex((byte[]) param.getResult()));
-
-                Method m = param.thisObject.getClass().getDeclaredMethod("privateKey");
-
-                byte[] privateKey = (byte[]) m.invoke(param.thisObject);
-
-                log("private key: " + bytesToHex(privateKey));
-            }
-        });*/
-
-        /*findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "calculateSecretKey", byte[].class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-
-                log("calculate() input: " + bytesToHex((byte[]) param.args[0]));
-
-                log("result: " + bytesToHex((byte[]) param.getResult()));
             }
         });*/
 
