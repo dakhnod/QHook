@@ -5,25 +5,12 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Build;
 import android.util.Log;
 
-import com.fossil.blesdk.device.data.config.DeviceConfigKey;
-import com.fossil.blesdk.device.data.notification.NotificationFilter;
-import com.fossil.blesdk.device.data.notification.NotificationHandMovingConfig;
-import com.fossil.blesdk.device.data.notification.NotificationVibePattern;
-
-import org.json.JSONObject;
-
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.zip.CRC32;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XC_MethodReplacement;
-import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import hook.KeyHook;
 
 import static de.robv.android.xposed.XposedHelpers.findAndHookConstructor;
 import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
@@ -72,89 +59,26 @@ public class Hook implements IXposedHookLoadPackage {
             }
         });
 
-        findAndHookConstructor("com.fossil.blesdk.model.file.AssetFile", lpparam.classLoader, String.class, byte[].class, new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
+        findAndHookConstructor(
+                "com.fossil.blesdk.obfuscated.dw",
+                lpparam.classLoader,
+                "com.fossil.blesdk.obfuscated.ak",
+                "com.fossil.blesdk.obfuscated.fe.b",
+                "com.fossil.blesdk.obfuscated.id",
+                byte[].class,
+                String.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        super.beforeHookedMethod(param);
 
-                String fileName = (String) param.args[0];
+                        byte[] key = (byte[]) param.args[3];
 
-                log("fileName: " + fileName);
-
-                if (fileName.equals("main_bg")) {
-                    log("reading file...");
-                    FileInputStream fis = new FileInputStream("/sdcard/traditional_bg.bin");
-                    byte[] bytes = new byte[fis.available()];
-                    fis.read(bytes);
-                    fis.close();
-
-                    byte[] originalBytes = (byte[]) param.args[1];
-
-                    log("original length: " + originalBytes.length + "   new: " + bytes.length);
-
-                    for (int i = 0; i < originalBytes.length; i++) {
-                        if (originalBytes[i] != bytes[i]) {
-                            log("uhhh error");
-                            break;
-                        }
+                        KeyHook.updateKey(key);
                     }
-
-                    param.args[1] = bytes;
-
-                    log("file read.");
                 }
-            }
-        });
+        );
 
-        findAndHookConstructor("com.fossil.blesdk.device.data.config.BatteryConfig", lpparam.classLoader, short.class, byte.class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-
-                log("battery voltage: " + param.args[0]);
-            }
-        });
-
-        /*findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "publicKey", new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                log("public key: " + bytesToHex((byte[]) param.getResult()));
-
-                Method m = param.thisObject.getClass().getDeclaredMethod("privateKey");
-
-                byte[] privateKey = (byte[]) m.invoke(param.thisObject);
-
-                log("private key: " + bytesToHex(privateKey));
-            }
-        });*/
-
-        /*findAndHookMethod("com.fossil.crypto.EllipticCurveKeyPair.CppProxy", lpparam.classLoader, "calculateSecretKey", byte[].class, new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                super.afterHookedMethod(param);
-
-                log("calculate() input: " + bytesToHex((byte[]) param.args[0]));
-
-                log("result: " + bytesToHex((byte[]) param.getResult()));
-            }
-        });*/
-
-        /*findAndHookMethod("com.fossil.blesdk.obfuscated.u90", lpparam.classLoader, "a", int.class, String.class, String.class, new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                log(param.args[1] + ": " + param.args[2]);
-            }
-        });*/
-
-        /*findAndHookMethod("com.fossil.blesdk.device.DeviceImplementation", lpparam.classLoader, "d", byte[].class, new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                super.beforeHookedMethod(param);
-                new Exception().printStackTrace();
-            }
-        });*/
 
         /*final XC_MethodHook loggerHook = new XC_MethodHook() {
             @Override
@@ -170,7 +94,7 @@ public class Hook implements IXposedHookLoadPackage {
 */
         // 24BA5437
 
-        findAndHookMethod(
+        /*findAndHookMethod(
                 "com.fossil.blesdk.obfuscated.om",
                 lpparam.classLoader,
                 "a",
@@ -192,7 +116,7 @@ public class Hook implements IXposedHookLoadPackage {
                         new Exception().printStackTrace();
                     }
                 }
-        );
+        );*/
 
 
         /*findAndHookMethod("com.fossil.blesdk.obfuscated.f90", lpparam.classLoader, "a", new XC_MethodHook() {
@@ -228,6 +152,8 @@ public class Hook implements IXposedHookLoadPackage {
 
         log("hooked fossil");
     }
+
+
 
     private String getFileHandleName(byte handle) {
         switch (handle) {
